@@ -17,17 +17,34 @@
  * - TM1638 datasheet: https://github.com/lpodkalicki/attiny-tm1638-library/blob/master/docs/tm1638.pdf
  */
 
-#ifndef	_ATTINY_TM1638_H_
-#define	_ATTINY_TM1638_H_
+#ifndef	_TM1638_H_
+#define	_TM1638_H_
 
-#include <stdint.h>
 
+#define IOCTL_DISPLAY_SEG 0xFF112200
+#define IOCTL_CLEAR_SEG 0xFF112211
+#define IOCTL_SET_LED 0xFF112222
+#define IOCTL_CLEAR_LED 0xFF112233
+#define IOCTL_SCAN_KEY 0xFF112244
+#define IOCTL_SET_CONFIG 0xFF112255
+
+#ifdef __KERNEL__
 // Main Settings
 #define	TM1638_DIO_PIN			PB0
 #define	TM1638_CLK_PIN			PB1
 #define	TM1638_STB_PIN			PB2
-#define	TM1638_DELAY_US			(5)
-#define	TM1638_MAX_BRIGHTNESS		0x07
+#define	TM1638_DELAY_US			20
+#define	TM1638_MSLEEP			1
+
+#define	TM1638_0_BRIGHTNESS 0x00
+#define	TM1638_1_BRIGHTNESS 0x01
+#define	TM1638_2_BRIGHTNESS 0x02
+#define	TM1638_3_BRIGHTNESS 0x03
+#define	TM1638_4_BRIGHTNESS 0x03
+#define	TM1638_5_BRIGHTNESS 0x05
+#define	TM1638_6_BRIGHTNESS 0x06
+#define	TM1638_MAX_BRIGHTNESS 0x07
+
 
 // TM1638 commands
 #define	TM1638_CMD_SET_DATA		0x40
@@ -114,4 +131,5 @@ void TM1638_clear_leds(void);
  */
 uint8_t TM1638_scan_keys(void);
 
-#endif	/* !_ATTINY_TM1638_H_ */
+#endif	/* _TM1638_H_ */
+#endif
