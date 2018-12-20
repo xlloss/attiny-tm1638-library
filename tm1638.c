@@ -66,7 +66,6 @@ struct tm1638_data
 struct tm1638_data *data;
 
 static void tm1638_send_config(const uint8_t enable, const uint8_t brightness);
-//static void tm1638_send_command(const uint8_t value);
 static void tm1638_write_byte(uint8_t value);
 static uint8_t tm1638_read_byte(void);
 static void tm1638_send_data(const uint8_t address, const uint8_t data);
@@ -99,13 +98,13 @@ void tm1638_dio_input(void)
 void tm1638_dio_high(void)
 {
     gpio_set_value(data->gpio_dio, 1);
-    udelay(5);
+    usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 }
 
 void tm1638_dio_low(void)
 {
     gpio_set_value(data->gpio_dio, 0);
-    udelay(5);
+    usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 }
 
 unsigned char tm1638_dio_read(void)
@@ -116,25 +115,25 @@ unsigned char tm1638_dio_read(void)
 void tm1638_clk_high(void)
 {
     gpio_set_value(data->gpio_sck, 1);
-    udelay(5);
+    usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 }
 
 void tm1638_clk_low(void)
 {
     gpio_set_value(data->gpio_sck, 0);
-    udelay(5);
+    usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 }
 
 void tm1638_stb_high(void)
 {
     gpio_set_value(data->gpio_stb, 1);
-    udelay(5);
+    usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 }
 
 void tm1638_stb_low(void)
 {
     gpio_set_value(data->gpio_stb, 0);
-    udelay(5);
+    usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 }
 
 uint8_t tm1638_read_byte(void)
@@ -165,8 +164,7 @@ void tm1638_write_byte(uint8_t value)
 
 	for (i = 0; i < 8; ++i, value >>= 1) {
 		tm1638_clk_low();
-		//msleep(TM1638_MSLEEP);
-		udelay(TM1638_DELAY_US);
+        usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 
 		if (value & 0x01)
 			tm1638_dio_high();
@@ -174,31 +172,40 @@ void tm1638_write_byte(uint8_t value)
 			tm1638_dio_low();
 
 		tm1638_clk_high();
-		//msleep(TM1638_MSLEEP);
-		udelay(TM1638_DELAY_US);
+		usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 	}
 }
 
-void tm1638_send_command(const uint8_t value)
+void tm1638_send_cmd(const uint8_t value)
 {
 	tm1638_write_byte(value);
 }
 
-void tm1638_send_data(const uint8_t address, const uint8_t data)
+void tm1638_data_cmd(void)
 {
-
-	tm1638_stb_low();
-	tm1638_send_command(TM1638_CMD_SET_DATA | TM1638_SET_DATA_F_ADDR);
-	tm1638_stb_high();
-    udelay(5);
-
     tm1638_stb_low();
-  	tm1638_send_command(TM1638_CMD_SET_ADDR | address);
-  	tm1638_write_byte(data);
+    tm1638_send_cmd(TM1638_CMD_SET_DATA | TM1638_SET_DATA_F_ADDR);
 	tm1638_stb_high();
-    udelay(5);
+    usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 }
 
+void tm1638_display_cmd(const uint8_t config)
+{
+    tm1638_stb_low();
+    tm1638_send_cmd(TM1638_CMD_SET_DSIPLAY | config);
+	tm1638_stb_high();
+    usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
+}
+
+void tm1638_send_data(const uint8_t address, const uint8_t data)
+{
+    tm1638_data_cmd();
+    tm1638_stb_low();
+    tm1638_send_cmd(TM1638_CMD_SET_ADDR | address);
+    tm1638_write_byte(data);
+    tm1638_stb_high();
+    usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
+}
 
 void tm1638_enable(const uint8_t value)
 {
@@ -276,8 +283,8 @@ void tm1638_send_config(const uint8_t enable, const uint8_t brightness)
     _config = (enable ? TM1638_SET_DISPLAY_ON : TM1638_SET_DISPLAY_OFF) |
         (brightness > TM1638_MAX_BRIGHTNESS ? TM1638_MAX_BRIGHTNESS : brightness);
 
-    tm1638_send_command(TM1638_CMD_SET_DATA);
-    tm1638_send_command(TM1638_CMD_SET_DSIPLAY | _config);
+    tm1638_data_cmd();
+    tm1638_display_cmd(_config);
 }
 
 void tm1638_hw_init(const uint8_t enable, const uint8_t brightness)
