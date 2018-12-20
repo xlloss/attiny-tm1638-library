@@ -35,14 +35,6 @@
 #include "tm1638.h"
 
 
-struct display_digit
-{
-    uint8_t position;
-    uint8_t digit;
-    uint8_t dot;
-    uint8_t dummy;
-};
-
 struct display_led
 {
     uint8_t position;
@@ -308,17 +300,20 @@ static int tm1638_release(struct inode *inode, struct file *file)
 
 static long tm1638_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
-    struct tm1638_display _tm1638_display;
+    struct tm1638_display _tm1638_dis;
     void __user *argp = (void __user *) arg;
+
 
     switch (cmd) {
         case IOCTL_DISPLAY_SEG:
-            pr_err("%s:IOCTL_DISPLAY_SEG\r\n", __func__);
-            if (copy_from_user(&_tm1638_display, argp, sizeof(_tm1638_display)))
+            pr_info("%s:IOCTL_DISPLAY_SEG\r\n", __func__);
+
+            if (copy_from_user(&_tm1638_dis, argp, sizeof(_tm1638_dis)))
                 return -EFAULT;
 
-            tm1638_display_digit(_tm1638_display.dis_dig.position,
-                _tm1638_display.dis_dig.digit, _tm1638_display.dis_dig.dot);
+            tm1638_display_digit(_tm1638_dis.dis_dig.position * 2,
+                _tm1638_dis.dis_dig.digit,
+                _tm1638_dis.dis_dig.dot);
             break;
 
         case IOCTL_CLEAR_SEG:

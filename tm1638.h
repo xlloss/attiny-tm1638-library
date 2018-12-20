@@ -20,13 +20,31 @@
 #ifndef	_TM1638_H_
 #define	_TM1638_H_
 
+#include <linux/ioctl.h>
 
-#define IOCTL_DISPLAY_SEG 0xFF112200
-#define IOCTL_CLEAR_SEG 0xFF112211
-#define IOCTL_SET_LED 0xFF112222
-#define IOCTL_CLEAR_LED 0xFF112233
-#define IOCTL_SCAN_KEY 0xFF112244
-#define IOCTL_SET_CONFIG 0xFF112255
+//#define IOCTL_DISPLAY_SEG 0xFF112200
+//#define IOCTL_CLEAR_SEG 0xFF112211
+//#define IOCTL_SET_LED 0xFF112222
+//#define IOCTL_CLEAR_LED 0xFF112233
+//#define IOCTL_SCAN_KEY 0xFF112244
+//#define IOCTL_SET_CONFIG 0xFF112255
+
+struct display_digit
+{
+    unsigned char position;
+    unsigned char digit;
+    unsigned char dot;
+    unsigned char dummy;
+};
+
+#define IOC_MAGIC 's'
+#define IOCTL_DISPLAY_SEG _IOW(IOC_MAGIC,0, struct display_digit)
+#define IOCTL_CLEAR_SEG _IOW(IOC_MAGIC, 1, struct display_digit)
+#define IOCTL_CLEAR_LED _IOW(IOC_MAGIC, 2, struct display_digit)
+#define IOCTL_SET_LED _IOW(IOC_MAGIC, 3, struct display_digit)
+#define IOCTL_SCAN_KEY _IOW(IOC_MAGIC, 4, struct display_digit)
+#define IOCTL_SET_CONFIG _IOW(IOC_MAGIC, 5, struct display_digit)
+
 
 #ifdef __KERNEL__
 // Main Settings
