@@ -35,12 +35,6 @@
 #include "tm1638.h"
 
 
-struct display_led
-{
-    uint8_t position;
-    uint8_t value;
-};
-
 struct tm1638_display
 {
     struct display_digit dis_dig;
@@ -297,6 +291,7 @@ static int tm1638_release(struct inode *inode, struct file *file)
 static long tm1638_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
     struct tm1638_display _tm1638_dis;
+    struct display_led __tm1638_led;
     void __user *argp = (void __user *) arg;
 
 
@@ -319,10 +314,14 @@ static long tm1638_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
         case IOCTL_SET_LED:
             pr_err("%s:IOCTL_SET_LED\r\n", __func__);
-            /* tm1638_set_led(const uint8_t position, const uint8_t value) */
+            if (copy_from_user(&__tm1638_led, argp, sizeof(__tm1638_led)))
+                return -EFAULT;
+
+            tm1638_set_led(__tm1638_led.position, __tm1638_led.value);
             break;
 
         case IOCTL_CLEAR_LED:
+            tm1638_clear_leds();
             pr_err("%s:IOCTL_CLEAR_LED\r\n", __func__);
             break;
 
@@ -409,8 +408,10 @@ static int tm1638_probe(struct platform_device *pdev)
 
     tm1638_hw_init(TM1638_SET_DISPLAY_ON, TM1638_MAX_BRIGHTNESS);
 
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 8; i++) {
         tm1638_display_digit(i * 2, 0, 1);
+        tm1638_set_led(i, 1);
+    }
 
     return 0;
 

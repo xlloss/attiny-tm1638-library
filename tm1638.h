@@ -37,6 +37,12 @@ struct display_digit
     unsigned char dummy;
 };
 
+struct display_led
+{
+    unsigned char position;
+    unsigned char value;
+};
+
 #define IOC_MAGIC 's'
 #define IOCTL_DISPLAY_SEG _IOW(IOC_MAGIC,0, struct display_digit)
 #define IOCTL_CLEAR_SEG _IOW(IOC_MAGIC, 1, struct display_digit)
