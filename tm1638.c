@@ -57,12 +57,8 @@ struct tm1638_data
 
 struct tm1638_data *data;
 
-static void tm1638_send_config(const uint8_t enable, const uint8_t brightness);
-static void tm1638_write_byte(uint8_t value);
-static uint8_t tm1638_read_byte(void);
-static void tm1638_send_data(const uint8_t address, const uint8_t data);
-
 static uint8_t _config = TM1638_SET_DISPLAY_ON | TM1638_MAX_BRIGHTNESS;
+
 const uint8_t _digit2segments[10] = {
 	0x3F, // 0
 	0x06, // 1
@@ -199,6 +195,16 @@ void tm1638_send_data(const uint8_t address, const uint8_t data)
     usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 }
 
+void tm1638_send_config(const uint8_t enable, const uint8_t brightness)
+{
+
+    _config = (enable ? TM1638_SET_DISPLAY_ON : TM1638_SET_DISPLAY_OFF) |
+        (brightness > TM1638_MAX_BRIGHTNESS ? TM1638_MAX_BRIGHTNESS : brightness);
+
+    tm1638_data_cmd();
+    tm1638_display_cmd(_config);
+}
+
 void tm1638_enable(const uint8_t value)
 {
 	tm1638_send_config(value, _config & TM1638_MAX_BRIGHTNESS);
@@ -267,16 +273,6 @@ uint8_t tm1638_scan_keys(void)
 	tm1638_stb_high();
 
   	return keys;
-}
-
-void tm1638_send_config(const uint8_t enable, const uint8_t brightness)
-{
-
-    _config = (enable ? TM1638_SET_DISPLAY_ON : TM1638_SET_DISPLAY_OFF) |
-        (brightness > TM1638_MAX_BRIGHTNESS ? TM1638_MAX_BRIGHTNESS : brightness);
-
-    tm1638_data_cmd();
-    tm1638_display_cmd(_config);
 }
 
 void tm1638_hw_init(const uint8_t enable, const uint8_t brightness)
