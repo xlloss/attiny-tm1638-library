@@ -36,9 +36,9 @@
 #include "tm1638.h"
 
 #define PIN_NUM 3
-#define PIN_DIO_DTS_NAME "gpio_dio"
-#define PIN_SCK_DTS_NAME "gpio_sck"
-#define PIN_STB_DTS_NAME "gpio_stb"
+#define PIN_DIO_DTS_NAME "dio"
+#define PIN_SCK_DTS_NAME "sck"
+#define PIN_STB_DTS_NAME "stb"
 
 #define GPIO_OUT_HI 1
 #define GPIO_OUT_LO 0
@@ -130,7 +130,7 @@ unsigned char tm1638_dio_read(void)
 
 void tm1638_clk_high(void)
 {
-    gpiod_set_value(data->gpio_dio, GPIO_OUT_HI);
+    gpiod_set_value(data->gpio_sck, GPIO_OUT_HI);
     usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 }
 
@@ -142,7 +142,7 @@ void tm1638_clk_low(void)
 
 void tm1638_stb_high(void)
 {
-    gpiod_set_value(data->gpio_sck, GPIO_OUT_HI);
+    gpiod_set_value(data->gpio_stb, GPIO_OUT_HI);
     usleep_range(TM1638_USLEEP_MIN, TM1638_USLEEP_MAX);
 }
 
@@ -414,9 +414,8 @@ static int tm1638_probe(struct platform_device *pdev)
 	char *pin_name[PIN_NUM] = {PIN_DIO_DTS_NAME,
             PIN_SCK_DTS_NAME, PIN_STB_DTS_NAME};
 
-    pr_info("%s\r\n", __func__);
 
-    //data = kzalloc(sizeof(*data), GFP_KERNEL);
+    data = (struct tm1638_data *)kzalloc(sizeof(*data), GFP_KERNEL);
 
 	err = misc_register(&tm1638_device);
 	if (err) {
@@ -424,10 +423,11 @@ static int tm1638_probe(struct platform_device *pdev)
 		goto misc_register_failed;
 	}
 
-    //platform_set_drvdata(pdev, data);
-    //data->dev = &pdev->dev;
+    platform_set_drvdata(pdev, data);
+    data->dev = &pdev->dev;
 
     /* Try requesting the GPIOs */
+
 	for (i = 0; i < PIN_NUM; i++) {
 		switch (i) {
 			case 0:
@@ -450,6 +450,8 @@ static int tm1638_probe(struct platform_device *pdev)
 				if (IS_ERR(data->gpio_stb))
 					goto gpio_init_error;
 				break;
+            default:
+                break;
 		}
 	}
 
@@ -467,8 +469,8 @@ gpio_init_error:
 	dev_err(&pdev->dev, "%s gpio init failed index %d\r\n", __func__, i);
 
 misc_register_failed:
-    dev_err(&pdev->dev, "%s misc_register_failed\r\n", __func__);
-//    kfree(data);
+    misc_deregister(&tm1638_device);
+    kfree(data);
     return 0;
 }
 
@@ -478,13 +480,13 @@ static int tm1638_remove(struct platform_device *pdev)
 
     tm1638_clear_segments();
     misc_deregister(&tm1638_device);
-//    kfree(data);
+    kfree(data);
     return 0;
 }
 
 #ifdef CONFIG_OF
 static const struct of_device_id tm1638_match[] = {
-	{ .compatible = "test, tm1638" },
+	{ .compatible = "titanmicro,tm1638" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, tm1638_match);
