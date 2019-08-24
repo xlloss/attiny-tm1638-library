@@ -36,7 +36,7 @@
 #include "tm1638.h"
 
 #define PIN_NUM 3
-#define PIN_DIO_DTS_NAME "dio"
+#define PIN_DIO_DTS_NAME "sdo"
 #define PIN_SCK_DTS_NAME "sck"
 #define PIN_STB_DTS_NAME "stb"
 
@@ -409,11 +409,9 @@ static struct miscdevice tm1638_device = {
  */
 static int tm1638_probe(struct platform_device *pdev)
 {
-    int err;
-    int i;
+    int err, i;
 	char *pin_name[PIN_NUM] = {PIN_DIO_DTS_NAME,
             PIN_SCK_DTS_NAME, PIN_STB_DTS_NAME};
-
 
     data = (struct tm1638_data *)kzalloc(sizeof(*data), GFP_KERNEL);
 
@@ -428,32 +426,29 @@ static int tm1638_probe(struct platform_device *pdev)
 
     /* Try requesting the GPIOs */
 
-	for (i = 0; i < PIN_NUM; i++) {
-		switch (i) {
-			case 0:
-				data->gpio_dio = devm_gpiod_get_optional(&pdev->dev,
-					pin_name[i], GPIOD_OUT_HIGH);
-				if (IS_ERR(data->gpio_dio))
-					goto gpio_init_error;
-				break;
+	data->gpio_dio = devm_gpiod_get_optional(&pdev->dev,
+		pin_name[0], GPIOD_OUT_HIGH);
+	//if (IS_ERR(data->gpio_dio))
+	if (!data->gpio_dio) {
+        pr_err("data->gpio_dio get fail\r\n");
+		goto gpio_init_error;
+    }
+    
+	data->gpio_sck = devm_gpiod_get_optional(&pdev->dev,
+		pin_name[1], GPIOD_OUT_HIGH);
+	//if (IS_ERR(data->gpio_sck))
+	if (!data->gpio_sck) {
+        pr_err("data->gpio_sck get fail\r\n");
+		goto gpio_init_error;
+    }
 
-			case 1:
-				data->gpio_sck = devm_gpiod_get_optional(&pdev->dev,
-					pin_name[i], GPIOD_OUT_HIGH);
-				if (IS_ERR(data->gpio_sck))
-					goto gpio_init_error;
-				break;
-
-			case 2:
-				data->gpio_stb = devm_gpiod_get_optional(&pdev->dev,
-					pin_name[i], GPIOD_OUT_HIGH);
-				if (IS_ERR(data->gpio_stb))
-					goto gpio_init_error;
-				break;
-            default:
-                break;
-		}
-	}
+	data->gpio_stb = devm_gpiod_get_optional(&pdev->dev,
+		pin_name[2], GPIOD_OUT_HIGH);
+	//if (IS_ERR(data->gpio_stb))
+	if (!data->gpio_stb) {
+        pr_err("data->gpio_stb get fail\r\n");
+		goto gpio_init_error;
+    }
 
     tm1638_hw_init(TM1638_SET_DISPLAY_ON, TM1638_MAX_BRIGHTNESS);
 
@@ -466,7 +461,7 @@ static int tm1638_probe(struct platform_device *pdev)
     return 0;
 
 gpio_init_error:
-	dev_err(&pdev->dev, "%s gpio init failed index %d\r\n", __func__, i);
+	dev_err(&pdev->dev, "%s gpio init failed\r\n", __func__);
 
 misc_register_failed:
     misc_deregister(&tm1638_device);
@@ -478,7 +473,7 @@ static int tm1638_remove(struct platform_device *pdev)
 {
     pr_err("%s\r\n", __func__);
 
-    tm1638_clear_segments();
+//    tm1638_clear_segments();
     misc_deregister(&tm1638_device);
     kfree(data);
     return 0;
